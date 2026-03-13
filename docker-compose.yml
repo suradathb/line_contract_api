@@ -1,0 +1,15 @@
+services:
+  api:
+    build: .
+    container_name: line-contract-api
+    ports:
+      - "8000:8000"
+    environment:
+      APP_NAME: LINE Contract Inquiry API
+      APP_ENV: docker
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+      DATABASE_URL: sqlite+aiosqlite:///./data/line_contract.db
+      SEED_ON_STARTUP: "true"
+    volumes:
+      - ./data:/app/data

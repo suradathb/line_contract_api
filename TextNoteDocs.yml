@@ -1,0 +1,126 @@
+openapi: 3.0.3
+info:
+  title: MIS API
+  version: 1.0.0
+  description: API สำหรับดึงข้อมูลค่างวด และตรวจสอบเลขสัญญา
+
+servers:
+  - url: https://mis.example.com
+
+paths:
+  /api/v1/contracts/{contract_no}:
+    get:
+      summary: ดึงข้อมูลค่างวดตามเลขสัญญา
+      description: ส่งเลขสัญญาใน path และชื่อลูกค้า (optional) เพื่อดึงข้อมูลค่างวดทั้งหมด
+      parameters:
+        - in: path
+          name: contract_no
+          schema:
+            type: string
+          required: true
+          description: เลขสัญญา
+      responses:
+        "200":
+          description: ข้อมูลค่างวดสำเร็จ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  contract_no:
+                    type: string
+                  customer_name:
+                    type: string
+                  installments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        installment_no:
+                          type: integer
+                        due_date:
+                          type: string
+                          format: date
+                        amount:
+                          type: number
+                          format: float
+                        status:
+                          type: string
+                  total_due:
+                    type: number
+                    format: float
+                  next_due:
+                    type: string
+                    format: date
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "404":
+          description: Contract not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  contract_no:
+                    type: string
+
+  /api/v1/contracts/verify:
+    post:
+      summary: ตรวจสอบเลขสัญญาและ เลขบัตรประชาชน ลูกค้า
+      description: ตรวจสอบว่าข้อมูลตรงกับระบบ MIS หรือไม่
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                contract_no:
+                  type: string
+                  description: เลขสัญญา
+                citizen_id:
+                  type: string
+                  description: เลขบัตรประชาชน ลูกค้า
+      responses:
+        "200":
+          description: ผลการตรวจสอบ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  contract_no:
+                    type: string
+                  valid:
+                    type: boolean
+                  reason:
+                    type: string
+                    nullable: true
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - BearerAuth: []
