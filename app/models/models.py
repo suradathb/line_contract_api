@@ -15,14 +15,39 @@ class Contract(Base):
     id_card_no: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     customer_name: Mapped[str] = mapped_column(String(255), nullable=False)
     mobile_no: Mapped[str] = mapped_column(String(20), nullable=False)
-    installment_amount: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
-    due_date: Mapped[date] = mapped_column(Date, nullable=False)
-    contract_status: Mapped[str] = mapped_column(String(30), nullable=False, default="Active")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    mappings: Mapped[list["LineMapping"]] = relationship(back_populates="contract", cascade="all, delete-orphan")
-    payments: Mapped[list["PaymentSchedule"]] = relationship(back_populates="contract", cascade="all, delete-orphan")
+    vehicle_no: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
+    vehicle_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    daily_rent_amount: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
+    deposit_amount: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False, default=Decimal("0.00"))
+
+    contract_start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    contract_end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+
+    contract_status: Mapped[str] = mapped_column(String(30), nullable=False, default="ACTIVE")
+
+    total_paid_amount: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False, default=Decimal("0.00"))
+    total_outstanding_amount: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False, default=Decimal("0.00"))
+
+    last_payment_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+
+    line_notify_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    remark: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+    mappings: Mapped[list["LineMapping"]] = relationship(
+        back_populates="contract",
+        cascade="all, delete-orphan",
+    )
+    payments: Mapped[list["PaymentSchedule"]] = relationship(
+        back_populates="contract",
+        cascade="all, delete-orphan",
+    )
 
 
 class LineMapping(Base):
@@ -34,34 +59,57 @@ class LineMapping(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     contract_no: Mapped[str] = mapped_column(ForeignKey("contracts.contract_no"), nullable=False, index=True)
     customer_id: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+
     line_user_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     line_display_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    line_picture_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
     map_status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
     verified_flag: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
     mapped_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     unmapped_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    created_by: Mapped[str] = mapped_column(String(50), nullable=False, default="system")
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    contract: Mapped[Contract] = relationship(back_populates="mappings")
+    created_by: Mapped[str] = mapped_column(String(50), nullable=False, default="system")
+    remark: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+    contract: Mapped["Contract"] = relationship(back_populates="mappings")
 
 
 class PaymentSchedule(Base):
     __tablename__ = "payment_schedules"
+    __table_args__ = (
+        UniqueConstraint("contract_no", "billing_date", name="uq_contract_billing_date"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     contract_no: Mapped[str] = mapped_column(ForeignKey("contracts.contract_no"), nullable=False, index=True)
-    installment_no: Mapped[int] = mapped_column(Integer, nullable=False)
-    due_date: Mapped[date] = mapped_column(Date, nullable=False)
-    due_amount: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
+
+    billing_seq: Mapped[int] = mapped_column(Integer, nullable=False)
+    billing_date: Mapped[date] = mapped_column(Date, nullable=False)
+
+    daily_rent_amount: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
     paid_amount: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False, default=Decimal("0.00"))
     outstanding_amount: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
-    payment_status: Mapped[str] = mapped_column(String(20), nullable=False)
+
+    payment_status: Mapped[str] = mapped_column(String(20), nullable=False, default="UNPAID")
     payment_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     receipt_no: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
-    contract: Mapped[Contract] = relationship(back_populates="payments")
+    sent_line_flag: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    sent_line_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    remark: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+    contract: Mapped["Contract"] = relationship(back_populates="payments")
 
 
 class ApiLog(Base):
@@ -70,10 +118,17 @@ class ApiLog(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     api_name: Mapped[str] = mapped_column(String(100), nullable=False)
     request_ref: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+
     contract_no: Mapped[str | None] = mapped_column(String(30), nullable=True, index=True)
     line_user_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+
+    api_direction: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    source_system: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    target_system: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
     request_payload: Mapped[str | None] = mapped_column(Text, nullable=True)
     response_payload: Mapped[str | None] = mapped_column(Text, nullable=True)
     response_code: Mapped[str] = mapped_column(String(30), nullable=False)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)

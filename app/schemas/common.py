@@ -1,5 +1,14 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
-class ApiMessage(BaseModel):
+class MessageResponse(BaseModel):
     message: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SuccessResponse(BaseModel):
+    success: bool
+    message: str
+
+    model_config = ConfigDict(from_attributes=True)

@@ -28,31 +28,52 @@ class LineMappingRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_by_contract_no(self, contract_no: str) -> list[LineMapping]:
+        result = await self.db.execute(
+            select(LineMapping)
+            .where(LineMapping.contract_no == contract_no)
+            .order_by(LineMapping.mapped_at.desc(), LineMapping.id.desc())
+        )
+        return list(result.scalars().all())
+
     async def create(
         self,
         contract_no: str,
         customer_id: str,
         line_user_id: str,
         line_display_name: str | None,
+        line_picture_url: str | None,
         created_by: str,
+        remark: str | None = None,
     ) -> LineMapping:
         entity = LineMapping(
             contract_no=contract_no,
             customer_id=customer_id,
             line_user_id=line_user_id,
             line_display_name=line_display_name,
+            line_picture_url=line_picture_url,
             map_status="ACTIVE",
             verified_flag=True,
+            mapped_at=datetime.utcnow(),
             created_by=created_by,
+            remark=remark,
         )
         self.db.add(entity)
         await self.db.flush()
         await self.db.refresh(entity)
         return entity
 
-    async def unmap(self, entity: LineMapping) -> LineMapping:
+    async def unmap(
+        self,
+        entity: LineMapping,
+        remark: str | None = None,
+    ) -> LineMapping:
         entity.map_status = "INACTIVE"
         entity.unmapped_at = datetime.utcnow()
+
+        if remark is not None:
+            entity.remark = remark
+
         await self.db.flush()
         await self.db.refresh(entity)
         return entity

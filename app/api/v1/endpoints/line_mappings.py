@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,15 +19,28 @@ router = APIRouter(prefix="/line-mappings", tags=["LINE Mappings"])
 
 
 @router.post("", response_model=LineMappingResponse)
-async def create_line_mapping(payload: LineMappingCreateRequest, db: AsyncSession = Depends(get_db_session)) -> LineMappingResponse:
-    service = LineMappingService(ContractRepository(db), LineMappingRepository(db))
+async def create_line_mapping(
+    payload: LineMappingCreateRequest,
+    db: AsyncSession = Depends(get_db_session),
+) -> LineMappingResponse:
+    request_ref = str(uuid4())
+
+    service = LineMappingService(
+        ContractRepository(db),
+        LineMappingRepository(db),
+    )
     response = await service.map_line_user(payload)
+
     await ApiLogRepository(db).create(
         api_name="MapLineUser",
+        request_ref=request_ref,
         response_code="200",
         contract_no=payload.contract_no,
         line_user_id=payload.line_user_id,
-        request_payload=payload.model_dump(),
+        api_direction="INBOUND",
+        source_system="LINE",
+        target_system="API",
+        request_payload=payload.model_dump(mode="json"),
         response_payload=response.model_dump(mode="json"),
     )
     await db.commit()
@@ -33,16 +48,29 @@ async def create_line_mapping(payload: LineMappingCreateRequest, db: AsyncSessio
 
 
 @router.post("/unmap", response_model=LineUnmapResponse)
-async def unmap_line_mapping(payload: LineUnmapRequest, db: AsyncSession = Depends(get_db_session)) -> LineUnmapResponse:
-    service = LineMappingService(ContractRepository(db), LineMappingRepository(db))
+async def unmap_line_mapping(
+    payload: LineUnmapRequest,
+    db: AsyncSession = Depends(get_db_session),
+) -> LineUnmapResponse:
+    request_ref = str(uuid4())
+
+    service = LineMappingService(
+        ContractRepository(db),
+        LineMappingRepository(db),
+    )
     response = await service.unmap_line_user(payload)
+
     await ApiLogRepository(db).create(
         api_name="UnmapLineUser",
+        request_ref=request_ref,
         response_code="200",
         contract_no=response.contract_no,
         line_user_id=payload.line_user_id,
-        request_payload=payload.model_dump(),
-        response_payload=response.model_dump(),
+        api_direction="INBOUND",
+        source_system="LINE",
+        target_system="API",
+        request_payload=payload.model_dump(mode="json"),
+        response_payload=response.model_dump(mode="json"),
     )
     await db.commit()
     return response
