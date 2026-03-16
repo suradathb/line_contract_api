@@ -1,0 +1,4 @@
+contract_no,billing_seq,billing_date,daily_rent_amount,paid_amount,outstanding_amount,payment_status,payment_date,receipt_no,sent_line_flag,remark
+EV0001,1,2026-03-16,666.00,666.00,0.00,PAID,2026-03-16,RCPT-2001,true,Fully paid after reminder
+EV0002,1,2026-03-16,777.00,777.00,0.00,PAID,2026-03-17,RCPT-2002,true,Fully paid now
+EV0002,3,2026-03-18,777.00,0.00,777.00,UNPAID,,,false,New daily billing added

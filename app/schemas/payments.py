@@ -92,3 +92,29 @@ class PaymentHistoryItemResponse(BaseModel):
     remark: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+class PaymentImportResult(BaseModel):
+    total_rows: int
+    success_rows: int
+    failed_rows: int
+    errors: list[str]
+
+
+class NextPaymentToSendResponse(BaseModel):
+    contract_no: str
+    has_active_mapping: bool
+    line_user_id: str | None = None
+    line_display_name: str | None = None
+    payment: PaymentScheduleResponse | None = None
+    message: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class MarkPaymentSentResponse(BaseModel):
+    payment_id: int
+    contract_no: str
+    sent_line_flag: bool
+    sent_line_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

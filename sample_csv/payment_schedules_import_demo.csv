@@ -1,0 +1,6 @@
+contract_no,billing_seq,billing_date,daily_rent_amount,paid_amount,outstanding_amount,payment_status,payment_date,receipt_no,sent_line_flag,remark
+EV0001,1,2026-03-16,666.00,0.00,666.00,UNPAID,,,false,Daily billing for 2026-03-16
+EV0001,2,2026-03-17,666.00,0.00,666.00,UNPAID,,,false,Daily billing for 2026-03-17
+EV0002,1,2026-03-16,777.00,500.00,277.00,PARTIAL,2026-03-16,RCPT-1001,false,Partial payment
+EV0002,2,2026-03-17,777.00,0.00,777.00,UNPAID,,,false,New billing
+EV0003,1,2026-03-16,888.00,300.00,588.00,PARTIAL,2026-03-16,RCPT-1002,false,Partial payment for EV0003
