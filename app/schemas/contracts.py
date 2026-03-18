@@ -28,3 +28,12 @@ class ContractImportResponse(BaseModel):
     inserted: int
     updated: int
     total: int
+
+class ContractImportCsvResult(BaseModel):
+    success: bool
+    inserted: int
+    updated: int
+    failed: int
+    total: int
+    message: str
+    errors: list[str] = []

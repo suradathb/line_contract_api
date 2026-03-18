@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -84,5 +85,40 @@ class ContractRepository:
             line_mapped_at=None,
         )
 
+        self.db.add(new_contract)
+        return "inserted"
+    
+    async def get_by_contract_no(self, contract_no: str) -> ContractMaster | None:
+        result = await self.db.execute(
+            select(ContractMaster).where(ContractMaster.contract_no == contract_no)
+        )
+        return result.scalar_one_or_none()
+
+    async def upsert_contract_master(
+        self,
+        contract_no: str,
+        customer_name: str,
+        contract_status: str,
+        total_outstanding_amount: Decimal,
+    ) -> str:
+        contract = await self.get_by_contract_no(contract_no)
+
+        if contract:
+            contract.customer_name = customer_name
+            contract.contract_status = contract_status
+            contract.total_outstanding_amount = total_outstanding_amount
+            return "updated"
+
+        new_contract = ContractMaster(
+            contract_no=contract_no,
+            customer_name=customer_name,
+            contract_status=contract_status,
+            total_outstanding_amount=total_outstanding_amount,
+            line_user_id=None,
+            line_display_name=None,
+            line_map_status="UNMAPPED",
+            line_notify_enabled=False,
+            line_mapped_at=None,
+        )
         self.db.add(new_contract)
         return "inserted"

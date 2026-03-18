@@ -30,18 +30,11 @@ class PaymentService:
         self,
         line_user_id: str,
     ) -> PaymentInquiryResponse:
-        mapping = await self.line_mapping_repo.get_active_by_line_user_id(line_user_id)
-        if not mapping:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Active LINE mapping not found.",
-            )
-
-        contract = await self.contract_repo.get_by_contract_no(mapping.contract_no)
+        contract = await self.contract_repo.get_by_line_user_id(line_user_id)
         if not contract:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Contract not found.",
+                detail="LINE user is not mapped to any contract.",
             )
 
         payment = await self.payment_repo.get_latest_inquiry_by_contract_no(contract.contract_no)
@@ -69,14 +62,14 @@ class PaymentService:
         self,
         line_user_id: str,
     ) -> list[PaymentHistoryItemResponse]:
-        mapping = await self.line_mapping_repo.get_active_by_line_user_id(line_user_id)
-        if not mapping:
+        contract = await self.contract_repo.get_by_line_user_id(line_user_id)
+        if not contract:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Active LINE mapping not found.",
+                detail="LINE user is not mapped to any contract.",
             )
 
-        history = await self.payment_repo.get_history_by_contract_no(mapping.contract_no)
+        history = await self.payment_repo.get_history_by_contract_no(contract.contract_no)
         return [
             PaymentHistoryItemResponse.model_validate(item, from_attributes=True)
             for item in history
@@ -158,14 +151,26 @@ class PaymentService:
                 billing_seq = int(billing_seq_raw)
 
                 billing_date = self._parse_date(row.get("billing_date", ""), "billing_date")
-                daily_rent_amount = self._parse_decimal(row.get("daily_rent_amount", "0"), "daily_rent_amount")
-                paid_amount = self._parse_decimal(row.get("paid_amount", "0"), "paid_amount")
-                outstanding_amount = self._parse_decimal(row.get("outstanding_amount", "0"), "outstanding_amount")
+                daily_rent_amount = self._parse_decimal(
+                    row.get("daily_rent_amount", "0"),
+                    "daily_rent_amount",
+                )
+                paid_amount = self._parse_decimal(
+                    row.get("paid_amount", "0"),
+                    "paid_amount",
+                )
+                outstanding_amount = self._parse_decimal(
+                    row.get("outstanding_amount", "0"),
+                    "outstanding_amount",
+                )
 
                 payment_status = (row.get("payment_status") or "UNPAID").strip().upper()
                 payment_date = self._parse_optional_date(row.get("payment_date", ""))
                 receipt_no = (row.get("receipt_no") or "").strip() or None
-                sent_line_flag = self._parse_bool(row.get("sent_line_flag", "false"), "sent_line_flag")
+                sent_line_flag = self._parse_bool(
+                    row.get("sent_line_flag", "false"),
+                    "sent_line_flag",
+                )
                 remark = (row.get("remark") or "").strip() or None
 
                 await self.payment_repo.upsert_payment_schedule(
@@ -251,8 +256,9 @@ class PaymentService:
                 message="Contract not found.",
             )
 
-        mapping = await self.line_mapping_repo.get_active_by_contract_no(contract_no)
-        if not mapping:
+        has_active_mapping = bool(contract.line_user_id)
+
+        if not has_active_mapping:
             return NextPaymentToSendResponse(
                 contract_no=contract_no,
                 has_active_mapping=False,
@@ -265,8 +271,8 @@ class PaymentService:
             return NextPaymentToSendResponse(
                 contract_no=contract_no,
                 has_active_mapping=True,
-                line_user_id=mapping.line_user_id,
-                line_display_name=mapping.line_display_name,
+                line_user_id=contract.line_user_id,
+                line_display_name=contract.line_display_name,
                 payment=None,
                 message="No pending payment to send.",
             )
@@ -274,8 +280,8 @@ class PaymentService:
         return NextPaymentToSendResponse(
             contract_no=contract_no,
             has_active_mapping=True,
-            line_user_id=mapping.line_user_id,
-            line_display_name=mapping.line_display_name,
+            line_user_id=contract.line_user_id,
+            line_display_name=contract.line_display_name,
             payment=PaymentScheduleResponse.model_validate(payment, from_attributes=True),
             message="Next payment to send found.",
         )

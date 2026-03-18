@@ -1,0 +1,10 @@
+contract_no,customer_name,contract_status,total_outstanding_amount
+EV0001,Alisa S.,ACTIVE,666.00
+EV0002,Bob K.,ACTIVE,1054.00
+EV0003,Jon T.,ACTIVE,588.00
+EV0004,Emily R.,ACTIVE,0.00
+EV0005,Michael B.,ACTIVE,0.00
+EV0006,Jessica L.,ACTIVE,0.00
+EV0007,David M.,ACTIVE,0.00
+EV0008,Sarah W.,ACTIVE,0.00
+EV0009,Chris P.,ACTIVE,0.00

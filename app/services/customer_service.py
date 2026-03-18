@@ -45,6 +45,17 @@ class CustomerService:
                 message="Contract is already mapped.",
             )
 
+        existed_line = await self.contract_repo.get_by_line_user_id(payload.line_user_id)
+        if existed_line and existed_line.contract_no != payload.contract_no:
+            return CustomerVerifyResponse(
+                verified=True,
+                contract_no=contract.contract_no,
+                customer_name=contract.customer_name,
+                contract_status=contract.contract_status,
+                eligible_to_map=False,
+                message=f"LINE user is already mapped to contract {existed_line.contract_no}.",
+            )
+
         return CustomerVerifyResponse(
             verified=True,
             contract_no=contract.contract_no,
@@ -66,8 +77,10 @@ class CustomerService:
             raise ValueError("Contract is already mapped.")
 
         existed_line = await self.contract_repo.get_by_line_user_id(payload.line_user_id)
-        if existed_line:
-            raise ValueError("This LINE user is already mapped to another contract.")
+        if existed_line and existed_line.contract_no != payload.contract_no:
+            raise ValueError(
+                f"This LINE user is already mapped to contract {existed_line.contract_no}."
+            )
 
         contract = await self.contract_repo.map_line(
             contract_no=payload.contract_no,
