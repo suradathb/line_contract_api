@@ -1,18 +1,17 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.endpoints.contracts import router as contracts_router
 from app.api.v1.endpoints.customers import router as customers_router
-from app.api.v1.endpoints.line_mappings import router as line_mappings_router
 from app.api.v1.endpoints.payments import router as payments_router
 from app.core.config import settings
 from app.db.base import Base
 from app.db.seed import seed_demo_data
 from app.db.session import AsyncSessionLocal, engine
 
-# Ensure models are imported so SQLAlchemy metadata can discover all tables.
-from app.models import ApiLog, Contract, LineMapping, PaymentSchedule  # noqa: F401
+from app.models import ApiLog, ContractMaster  # noqa: F401
 
 
 @asynccontextmanager
@@ -38,11 +37,20 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:8081",
+        "http://127.0.0.1:8081",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(customers_router, prefix="/api/v1")
-app.include_router(line_mappings_router, prefix="/api/v1")
 app.include_router(contracts_router, prefix="/api/v1")
 app.include_router(payments_router, prefix="/api/v1")
-
 
 @app.get("/health", tags=["System"])
 async def health() -> dict:

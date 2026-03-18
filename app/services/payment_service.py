@@ -6,7 +6,6 @@ from decimal import Decimal, InvalidOperation
 from fastapi import HTTPException, status
 
 from app.repositories.contract_repository import ContractRepository
-from app.repositories.line_mapping_repository import LineMappingRepository
 from app.repositories.payment_repository import PaymentRepository
 from app.schemas.payments import (
     MarkPaymentSentResponse,
@@ -22,11 +21,9 @@ class PaymentService:
     def __init__(
         self,
         contract_repo: ContractRepository,
-        line_mapping_repo: LineMappingRepository,
         payment_repo: PaymentRepository,
-    ) -> None:
+    ):
         self.contract_repo = contract_repo
-        self.line_mapping_repo = line_mapping_repo
         self.payment_repo = payment_repo
 
     async def get_payment_inquiry_by_line_user_id(

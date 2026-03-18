@@ -1,227 +1,53 @@
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Contract, LineMapping, PaymentSchedule
+from app.models.contract_master import ContractMaster
 
 
 async def seed_demo_data(db: AsyncSession) -> None:
-    result = await db.execute(select(func.count()).select_from(Contract))
+    result = await db.execute(select(func.count()).select_from(ContractMaster))
     count = result.scalar_one()
     if count and count > 0:
         return
 
     contracts = [
-        Contract(
+        ContractMaster(
             contract_no="EV0001",
-            customer_id="CUST0001",
-            id_card_no="1103700000011",
             customer_name="Alisa S.",
-            mobile_no="0811111111",
-            vehicle_no="1กข1234",
-            vehicle_type="Taxi",
-            daily_rent_amount=Decimal("666.00"),
-            deposit_amount=Decimal("3000.00"),
-            contract_start_date=date(2026, 1, 1),
-            contract_end_date=date(2026, 12, 31),
             contract_status="ACTIVE",
-            total_paid_amount=Decimal("1332.00"),
             total_outstanding_amount=Decimal("666.00"),
-            last_payment_date=date(2026, 2, 27),
-            line_notify_enabled=True,
-            remark="Demo contract 1",
-        ),
-        Contract(
-            contract_no="EV0002",
-            customer_id="CUST0002",
-            id_card_no="1103700000022",
-            customer_name="Bob K.",
-            mobile_no="0822222222",
-            vehicle_no="2ขค2345",
-            vehicle_type="Taxi",
-            daily_rent_amount=Decimal("777.00"),
-            deposit_amount=Decimal("3500.00"),
-            contract_start_date=date(2026, 1, 1),
-            contract_end_date=date(2026, 12, 31),
-            contract_status="ACTIVE",
-            total_paid_amount=Decimal("1277.00"),
-            total_outstanding_amount=Decimal("1054.00"),
-            last_payment_date=date(2026, 2, 26),
-            line_notify_enabled=True,
-            remark="Demo contract 2",
-        ),
-        Contract(
-            contract_no="EV0003",
-            customer_id="CUST0003",
-            id_card_no="1103700000033",
-            customer_name="Jon T.",
-            mobile_no="0833333333",
-            vehicle_no="3คง3456",
-            vehicle_type="Sedan",
-            daily_rent_amount=Decimal("888.00"),
-            deposit_amount=Decimal("4000.00"),
-            contract_start_date=date(2026, 1, 1),
-            contract_end_date=date(2026, 12, 31),
-            contract_status="ACTIVE",
-            total_paid_amount=Decimal("2076.00"),
-            total_outstanding_amount=Decimal("588.00"),
-            last_payment_date=date(2026, 3, 8),
-            line_notify_enabled=False,
-            remark="Demo contract 3",
-        ),
-    ]
-    db.add_all(contracts)
-    await db.flush()
-
-    mappings = [
-        LineMapping(
-            contract_no="EV0001",
-            customer_id="CUST0001",
             line_user_id="U_DEMO_0001",
             line_display_name="Alisa Line",
-            line_picture_url="https://example.com/profiles/alisa.jpg",
-            map_status="ACTIVE",
-            verified_flag=True,
-            mapped_at=datetime.utcnow(),
-            created_by="seed",
-            remark="Seed demo mapping",
+            line_map_status="ACTIVE",
+            line_notify_enabled=True,
+            line_mapped_at=datetime.utcnow(),
         ),
-        LineMapping(
+        ContractMaster(
             contract_no="EV0002",
-            customer_id="CUST0002",
+            customer_name="Bob K.",
+            contract_status="ACTIVE",
+            total_outstanding_amount=Decimal("1054.00"),
             line_user_id="U_DEMO_0002",
             line_display_name="Bob Line",
-            line_picture_url="https://example.com/profiles/bob.jpg",
-            map_status="ACTIVE",
-            verified_flag=True,
-            mapped_at=datetime.utcnow(),
-            created_by="seed",
-            remark="Seed demo mapping",
+            line_map_status="ACTIVE",
+            line_notify_enabled=True,
+            line_mapped_at=datetime.utcnow(),
+        ),
+        ContractMaster(
+            contract_no="EV0003",
+            customer_name="Jon T.",
+            contract_status="ACTIVE",
+            total_outstanding_amount=Decimal("588.00"),
+            line_user_id=None,
+            line_display_name=None,
+            line_map_status="UNMAPPED",
+            line_notify_enabled=False,
+            line_mapped_at=None,
         ),
     ]
-    db.add_all(mappings)
-    await db.flush()
 
-    payments = [
-        PaymentSchedule(
-            contract_no="EV0001",
-            billing_seq=1,
-            billing_date=date(2026, 1, 31),
-            daily_rent_amount=Decimal("666.00"),
-            paid_amount=Decimal("666.00"),
-            outstanding_amount=Decimal("0.00"),
-            payment_status="PAID",
-            payment_date=date(2026, 1, 28),
-            receipt_no="RCPT-0001",
-            sent_line_flag=True,
-            remark="Paid in full",
-        ),
-        PaymentSchedule(
-            contract_no="EV0001",
-            billing_seq=2,
-            billing_date=date(2026, 2, 28),
-            daily_rent_amount=Decimal("666.00"),
-            paid_amount=Decimal("666.00"),
-            outstanding_amount=Decimal("0.00"),
-            payment_status="PAID",
-            payment_date=date(2026, 2, 27),
-            receipt_no="RCPT-0002",
-            sent_line_flag=True,
-            remark="Paid in full",
-        ),
-        PaymentSchedule(
-            contract_no="EV0001",
-            billing_seq=3,
-            billing_date=date(2026, 3, 31),
-            daily_rent_amount=Decimal("666.00"),
-            paid_amount=Decimal("0.00"),
-            outstanding_amount=Decimal("666.00"),
-            payment_status="UNPAID",
-            payment_date=None,
-            receipt_no=None,
-            sent_line_flag=False,
-            remark="Pending payment",
-        ),
-        PaymentSchedule(
-            contract_no="EV0002",
-            billing_seq=1,
-            billing_date=date(2026, 1, 31),
-            daily_rent_amount=Decimal("777.00"),
-            paid_amount=Decimal("777.00"),
-            outstanding_amount=Decimal("0.00"),
-            payment_status="PAID",
-            payment_date=date(2026, 1, 29),
-            receipt_no="RCPT-0003",
-            sent_line_flag=True,
-            remark="Paid in full",
-        ),
-        PaymentSchedule(
-            contract_no="EV0002",
-            billing_seq=2,
-            billing_date=date(2026, 2, 28),
-            daily_rent_amount=Decimal("777.00"),
-            paid_amount=Decimal("500.00"),
-            outstanding_amount=Decimal("277.00"),
-            payment_status="PARTIAL",
-            payment_date=date(2026, 2, 26),
-            receipt_no="RCPT-0004",
-            sent_line_flag=True,
-            remark="Partial payment",
-        ),
-        PaymentSchedule(
-            contract_no="EV0002",
-            billing_seq=3,
-            billing_date=date(2026, 3, 31),
-            daily_rent_amount=Decimal("777.00"),
-            paid_amount=Decimal("0.00"),
-            outstanding_amount=Decimal("777.00"),
-            payment_status="UNPAID",
-            payment_date=None,
-            receipt_no=None,
-            sent_line_flag=False,
-            remark="Pending payment",
-        ),
-        PaymentSchedule(
-            contract_no="EV0003",
-            billing_seq=1,
-            billing_date=date(2026, 1, 31),
-            daily_rent_amount=Decimal("888.00"),
-            paid_amount=Decimal("888.00"),
-            outstanding_amount=Decimal("0.00"),
-            payment_status="PAID",
-            payment_date=date(2026, 1, 30),
-            receipt_no="RCPT-0005",
-            sent_line_flag=True,
-            remark="Paid in full",
-        ),
-        PaymentSchedule(
-            contract_no="EV0003",
-            billing_seq=2,
-            billing_date=date(2026, 2, 28),
-            daily_rent_amount=Decimal("888.00"),
-            paid_amount=Decimal("888.00"),
-            outstanding_amount=Decimal("0.00"),
-            payment_status="PAID",
-            payment_date=date(2026, 2, 28),
-            receipt_no="RCPT-0006",
-            sent_line_flag=True,
-            remark="Paid in full",
-        ),
-        PaymentSchedule(
-            contract_no="EV0003",
-            billing_seq=3,
-            billing_date=date(2026, 3, 31),
-            daily_rent_amount=Decimal("888.00"),
-            paid_amount=Decimal("300.00"),
-            outstanding_amount=Decimal("588.00"),
-            payment_status="PARTIAL",
-            payment_date=date(2026, 3, 8),
-            receipt_no="RCPT-0007",
-            sent_line_flag=False,
-            remark="Partial payment",
-        ),
-    ]
-    db.add_all(payments)
+    db.add_all(contracts)
     await db.commit()

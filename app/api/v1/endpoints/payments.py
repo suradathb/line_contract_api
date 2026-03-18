@@ -7,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db_session
 from app.repositories.api_log_repository import ApiLogRepository
 from app.repositories.contract_repository import ContractRepository
-from app.repositories.line_mapping_repository import LineMappingRepository
 from app.repositories.payment_repository import PaymentRepository
 from app.schemas.payments import (
     MarkPaymentSentResponse,
@@ -30,7 +29,6 @@ async def get_payment_inquiry_by_line_user_id(
 
     service = PaymentService(
         ContractRepository(db),
-        LineMappingRepository(db),
         PaymentRepository(db),
     )
     response = await service.get_payment_inquiry_by_line_user_id(line_user_id)
@@ -59,7 +57,6 @@ async def get_payment_history_by_line_user_id(
 
     service = PaymentService(
         ContractRepository(db),
-        LineMappingRepository(db),
         PaymentRepository(db),
     )
     response = await service.get_payment_history_by_line_user_id(line_user_id)
@@ -96,7 +93,6 @@ async def import_payments_csv(
 
     service = PaymentService(
         ContractRepository(db),
-        LineMappingRepository(db),
         PaymentRepository(db),
     )
     response = await service.import_payment_schedules_csv(content)
@@ -127,7 +123,6 @@ async def export_payments_csv(
 
     service = PaymentService(
         ContractRepository(db),
-        LineMappingRepository(db),
         PaymentRepository(db),
     )
     csv_content = await service.export_payment_schedules_csv(contract_no=contract_no)
@@ -164,7 +159,6 @@ async def get_next_payment_to_send(
 
     service = PaymentService(
         ContractRepository(db),
-        LineMappingRepository(db),
         PaymentRepository(db),
     )
     response = await service.get_next_payment_to_send(contract_no)
@@ -193,7 +187,6 @@ async def mark_payment_sent(
 
     service = PaymentService(
         ContractRepository(db),
-        LineMappingRepository(db),
         PaymentRepository(db),
     )
 

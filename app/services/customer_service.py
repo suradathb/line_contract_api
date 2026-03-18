@@ -1,121 +1,109 @@
 from app.repositories.contract_repository import ContractRepository
-from app.repositories.line_mapping_repository import LineMappingRepository
-from app.schemas.customers import CustomerVerifyRequest, CustomerVerifyResponse
+from app.schemas.customers import (
+    CustomerMapRequest,
+    CustomerMapResponse,
+    CustomerUnmapResponse,
+    CustomerVerifyRequest,
+    CustomerVerifyResponse,
+)
 
 
 class CustomerService:
-    def __init__(
-        self,
-        contract_repo: ContractRepository,
-        line_mapping_repo: LineMappingRepository,
-    ) -> None:
+    def __init__(self, contract_repo: ContractRepository):
         self.contract_repo = contract_repo
-        self.line_mapping_repo = line_mapping_repo
 
     async def verify_customer(self, payload: CustomerVerifyRequest) -> CustomerVerifyResponse:
         contract = await self.contract_repo.get_by_contract_no(payload.contract_no)
+
         if not contract:
             return CustomerVerifyResponse(
                 verified=False,
                 contract_no=payload.contract_no,
+                customer_name=None,
+                contract_status=None,
                 eligible_to_map=False,
                 message="Contract not found.",
             )
 
-        is_match = (
-            contract.id_card_no == payload.id_card_no
-            and contract.mobile_no == payload.mobile_no
-        )
-        if not is_match:
-            return CustomerVerifyResponse(
-                verified=False,
-                contract_no=contract.contract_no,
-                customer_id=contract.customer_id,
-                customer_name=contract.customer_name,
-                mobile_no=contract.mobile_no,
-                vehicle_no=contract.vehicle_no,
-                vehicle_type=contract.vehicle_type,
-                contract_status=contract.contract_status,
-                contract_start_date=contract.contract_start_date,
-                contract_end_date=contract.contract_end_date,
-                total_paid_amount=contract.total_paid_amount,
-                total_outstanding_amount=contract.total_outstanding_amount,
-                last_payment_date=contract.last_payment_date,
-                line_notify_enabled=contract.line_notify_enabled,
-                eligible_to_map=False,
-                message="Customer verification failed.",
-            )
-
-        existing_contract_mapping = await self.line_mapping_repo.get_active_by_contract_no(
-            contract.contract_no
-        )
-        if existing_contract_mapping:
-            same_line_user = (
-                payload.line_user_id is not None
-                and existing_contract_mapping.line_user_id == payload.line_user_id
-            )
+        if contract.contract_status != "ACTIVE":
             return CustomerVerifyResponse(
                 verified=True,
                 contract_no=contract.contract_no,
-                customer_id=contract.customer_id,
                 customer_name=contract.customer_name,
-                mobile_no=contract.mobile_no,
-                vehicle_no=contract.vehicle_no,
-                vehicle_type=contract.vehicle_type,
                 contract_status=contract.contract_status,
-                contract_start_date=contract.contract_start_date,
-                contract_end_date=contract.contract_end_date,
-                total_paid_amount=contract.total_paid_amount,
-                total_outstanding_amount=contract.total_outstanding_amount,
-                last_payment_date=contract.last_payment_date,
-                line_notify_enabled=contract.line_notify_enabled,
                 eligible_to_map=False,
-                message=(
-                    "Customer verified and this contract is already mapped to this LINE user."
-                    if same_line_user
-                    else "Customer verified but contract is already mapped."
-                ),
+                message="Contract is not active.",
             )
 
-        if payload.line_user_id:
-            existing_line_mapping = await self.line_mapping_repo.get_active_by_line_user_id(
-                payload.line_user_id
+        if contract.line_user_id:
+            return CustomerVerifyResponse(
+                verified=True,
+                contract_no=contract.contract_no,
+                customer_name=contract.customer_name,
+                contract_status=contract.contract_status,
+                eligible_to_map=False,
+                message="Contract is already mapped.",
             )
-            if existing_line_mapping:
-                return CustomerVerifyResponse(
-                    verified=False,
-                    contract_no=contract.contract_no,
-                    customer_id=contract.customer_id,
-                    customer_name=contract.customer_name,
-                    mobile_no=contract.mobile_no,
-                    vehicle_no=contract.vehicle_no,
-                    vehicle_type=contract.vehicle_type,
-                    contract_status=contract.contract_status,
-                    contract_start_date=contract.contract_start_date,
-                    contract_end_date=contract.contract_end_date,
-                    total_paid_amount=contract.total_paid_amount,
-                    total_outstanding_amount=contract.total_outstanding_amount,
-                    last_payment_date=contract.last_payment_date,
-                    line_notify_enabled=contract.line_notify_enabled,
-                    eligible_to_map=False,
-                    message="This LINE user is already mapped to another contract.",
-                )
 
         return CustomerVerifyResponse(
             verified=True,
             contract_no=contract.contract_no,
-            customer_id=contract.customer_id,
             customer_name=contract.customer_name,
-            mobile_no=contract.mobile_no,
-            vehicle_no=contract.vehicle_no,
-            vehicle_type=contract.vehicle_type,
             contract_status=contract.contract_status,
-            contract_start_date=contract.contract_start_date,
-            contract_end_date=contract.contract_end_date,
-            total_paid_amount=contract.total_paid_amount,
-            total_outstanding_amount=contract.total_outstanding_amount,
-            last_payment_date=contract.last_payment_date,
-            line_notify_enabled=contract.line_notify_enabled,
             eligible_to_map=True,
-            message="Customer verified and eligible to map.",
+            message="Contract verified and eligible to map.",
+        )
+
+    async def map_customer(self, payload: CustomerMapRequest) -> CustomerMapResponse:
+        contract = await self.contract_repo.get_by_contract_no(payload.contract_no)
+        if not contract:
+            raise ValueError("Contract not found.")
+
+        if contract.contract_status != "ACTIVE":
+            raise ValueError("Contract is not active.")
+
+        if contract.line_user_id:
+            raise ValueError("Contract is already mapped.")
+
+        existed_line = await self.contract_repo.get_by_line_user_id(payload.line_user_id)
+        if existed_line:
+            raise ValueError("This LINE user is already mapped to another contract.")
+
+        contract = await self.contract_repo.map_line(
+            contract_no=payload.contract_no,
+            line_user_id=payload.line_user_id,
+            line_display_name=payload.line_display_name,
+        )
+
+        if not contract:
+            raise ValueError("Contract not found.")
+
+        return CustomerMapResponse(
+            success=True,
+            contract_no=contract.contract_no,
+            line_user_id=contract.line_user_id or "",
+            line_display_name=contract.line_display_name,
+            message="Contract mapped successfully.",
+        )
+
+    async def unmap_customer(self, contract_no: str) -> CustomerUnmapResponse:
+        contract = await self.contract_repo.get_by_contract_no(contract_no)
+        if not contract:
+            raise ValueError("Contract not found.")
+
+        if not contract.line_user_id:
+            return CustomerUnmapResponse(
+                success=True,
+                contract_no=contract.contract_no,
+                message="Contract is already unmapped.",
+            )
+
+        contract = await self.contract_repo.unmap_line(contract_no)
+        if not contract:
+            raise ValueError("Contract not found.")
+
+        return CustomerUnmapResponse(
+            success=True,
+            contract_no=contract.contract_no,
+            message="Contract unmapped successfully.",
         )
