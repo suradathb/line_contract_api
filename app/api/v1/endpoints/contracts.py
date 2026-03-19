@@ -60,16 +60,6 @@ async def get_contract_by_contract_no(
     await db.commit()
     return response
 
-@router.post("/import", response_model=ContractImportResponse)
-async def import_contracts(
-    payload: ContractImportRequest,
-    db: AsyncSession = Depends(get_db_session),
-):
-    service = ContractService(ContractRepository(db))
-    response = await service.import_contracts(payload)
-
-    await db.commit()
-    return response
 
 @router.post("/import-csv", response_model=ContractImportCsvResult)
 async def import_contracts_csv(
