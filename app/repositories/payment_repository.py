@@ -11,12 +11,16 @@ class PaymentRepository:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    async def get_latest_inquiry_by_contract_no(self, contract_no: str) -> PaymentSchedule | None:
+    async def get_inquiry_by_contract_no_and_billing_date(
+        self,
+        contract_no: str,
+        billing_date: date,
+    ) -> PaymentSchedule | None:
         result = await self.db.execute(
-            select(PaymentSchedule)
-            .where(PaymentSchedule.contract_no == contract_no)
-            .order_by(PaymentSchedule.billing_seq.desc())
-            .limit(1)
+            select(PaymentSchedule).where(
+                PaymentSchedule.contract_no == contract_no,
+                PaymentSchedule.billing_date == billing_date,
+            )
         )
         return result.scalar_one_or_none()
 
@@ -24,7 +28,11 @@ class PaymentRepository:
         result = await self.db.execute(
             select(PaymentSchedule)
             .where(PaymentSchedule.contract_no == contract_no)
-            .order_by(PaymentSchedule.billing_seq.asc())
+            .order_by(
+                PaymentSchedule.billing_date.asc(),
+                PaymentSchedule.billing_seq.asc(),
+                PaymentSchedule.id.asc(),
+            )
         )
         return list(result.scalars().all())
 
@@ -177,7 +185,12 @@ class PaymentRepository:
         if contract_no:
             stmt = stmt.where(PaymentSchedule.contract_no == contract_no)
 
-        stmt = stmt.order_by(PaymentSchedule.contract_no.asc(), PaymentSchedule.billing_date.asc())
+        stmt = stmt.order_by(
+            PaymentSchedule.contract_no.asc(),
+            PaymentSchedule.billing_date.asc(),
+            PaymentSchedule.billing_seq.asc(),
+            PaymentSchedule.id.asc(),
+        )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 

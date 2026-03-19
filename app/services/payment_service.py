@@ -29,6 +29,7 @@ class PaymentService:
     async def get_payment_inquiry_by_line_user_id(
         self,
         line_user_id: str,
+        billing_date: date,
     ) -> PaymentInquiryResponse:
         contract = await self.contract_repo.get_by_line_user_id(line_user_id)
         if not contract:
@@ -37,11 +38,14 @@ class PaymentService:
                 detail="LINE user is not mapped to any contract.",
             )
 
-        payment = await self.payment_repo.get_latest_inquiry_by_contract_no(contract.contract_no)
+        payment = await self.payment_repo.get_inquiry_by_contract_no_and_billing_date(
+            contract.contract_no,
+            billing_date,
+        )
         if not payment:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Payment information not found.",
+                detail=f"Payment information not found for billing_date {billing_date.isoformat()}.",
             )
 
         return PaymentInquiryResponse(

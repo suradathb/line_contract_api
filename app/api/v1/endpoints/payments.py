@@ -1,3 +1,4 @@
+from datetime import date
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
@@ -23,6 +24,7 @@ router = APIRouter(prefix="/payments", tags=["Payments"])
 @router.get("/inquiry/by-line/{line_user_id}", response_model=PaymentInquiryResponse)
 async def get_payment_inquiry_by_line_user_id(
     line_user_id: str,
+    billing_date: date = Query(default_factory=date.today),
     db: AsyncSession = Depends(get_db_session),
 ) -> PaymentInquiryResponse:
     request_ref = str(uuid4())
@@ -31,7 +33,7 @@ async def get_payment_inquiry_by_line_user_id(
         ContractRepository(db),
         PaymentRepository(db),
     )
-    response = await service.get_payment_inquiry_by_line_user_id(line_user_id)
+    response = await service.get_payment_inquiry_by_line_user_id(line_user_id, billing_date)
 
     await ApiLogRepository(db).create(
         api_name="GetPaymentInquiryByLineUserId",
@@ -42,6 +44,9 @@ async def get_payment_inquiry_by_line_user_id(
         api_direction="INBOUND",
         source_system="LINE",
         target_system="API",
+        request_payload={
+            "billing_date": billing_date.isoformat(),
+        },
         response_payload=response.model_dump(mode="json"),
     )
     await db.commit()
