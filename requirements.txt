@@ -8,4 +8,6 @@ aiosqlite==0.21.0
 pytest==8.4.1
 httpx==0.28.1
 aiosqlite
+python-dotenv
+pydantic-settings
 python-multipart

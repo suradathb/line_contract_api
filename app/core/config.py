@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     app_port: int = 8000
     database_url: str = "sqlite+aiosqlite:///./line_contract.db"
     seed_on_startup: bool = True
+    line_channel_access_token: str = ""
+    line_channel_secret: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

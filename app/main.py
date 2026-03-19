@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.endpoints.contracts import router as contracts_router
 from app.api.v1.endpoints.customers import router as customers_router
 from app.api.v1.endpoints.payments import router as payments_router
+from app.api.v1.endpoints.line_webhook import router as line_webhook_router
 from app.core.config import settings
 from app.db.base import Base
 from app.db.seed import seed_demo_data
@@ -51,6 +52,7 @@ app.add_middleware(
 app.include_router(customers_router, prefix="/api/v1")
 app.include_router(contracts_router, prefix="/api/v1")
 app.include_router(payments_router, prefix="/api/v1")
+app.include_router(line_webhook_router, prefix="/api/v1")
 
 @app.get("/health", tags=["System"])
 async def health() -> dict:
