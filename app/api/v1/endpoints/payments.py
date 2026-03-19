@@ -155,60 +155,60 @@ async def export_payments_csv(
     )
 
 
-@router.get("/{contract_no}/next-to-send", response_model=NextPaymentToSendResponse)
-async def get_next_payment_to_send(
-    contract_no: str,
-    db: AsyncSession = Depends(get_db_session),
-) -> NextPaymentToSendResponse:
-    request_ref = str(uuid4())
+# @router.get("/{contract_no}/next-to-send", response_model=NextPaymentToSendResponse)
+# async def get_next_payment_to_send(
+#     contract_no: str,
+#     db: AsyncSession = Depends(get_db_session),
+# ) -> NextPaymentToSendResponse:
+#     request_ref = str(uuid4())
 
-    service = PaymentService(
-        ContractRepository(db),
-        PaymentRepository(db),
-    )
-    response = await service.get_next_payment_to_send(contract_no)
+#     service = PaymentService(
+#         ContractRepository(db),
+#         PaymentRepository(db),
+#     )
+#     response = await service.get_next_payment_to_send(contract_no)
 
-    await ApiLogRepository(db).create(
-        api_name="GetNextPaymentToSend",
-        request_ref=request_ref,
-        response_code="200",
-        contract_no=contract_no,
-        line_user_id=response.line_user_id,
-        api_direction="INBOUND",
-        source_system="API",
-        target_system="API",
-        response_payload=response.model_dump(mode="json"),
-    )
-    await db.commit()
-    return response
+#     await ApiLogRepository(db).create(
+#         api_name="GetNextPaymentToSend",
+#         request_ref=request_ref,
+#         response_code="200",
+#         contract_no=contract_no,
+#         line_user_id=response.line_user_id,
+#         api_direction="INBOUND",
+#         source_system="API",
+#         target_system="API",
+#         response_payload=response.model_dump(mode="json"),
+#     )
+#     await db.commit()
+#     return response
 
 
-@router.post("/{payment_id}/mark-sent", response_model=MarkPaymentSentResponse)
-async def mark_payment_sent(
-    payment_id: int,
-    db: AsyncSession = Depends(get_db_session),
-) -> MarkPaymentSentResponse:
-    request_ref = str(uuid4())
+# @router.post("/{payment_id}/mark-sent", response_model=MarkPaymentSentResponse)
+# async def mark_payment_sent(
+#     payment_id: int,
+#     db: AsyncSession = Depends(get_db_session),
+# ) -> MarkPaymentSentResponse:
+#     request_ref = str(uuid4())
 
-    service = PaymentService(
-        ContractRepository(db),
-        PaymentRepository(db),
-    )
+#     service = PaymentService(
+#         ContractRepository(db),
+#         PaymentRepository(db),
+#     )
 
-    try:
-        response = await service.mark_payment_sent(payment_id)
-    except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
+#     try:
+#         response = await service.mark_payment_sent(payment_id)
+#     except ValueError as exc:
+#         raise HTTPException(status_code=404, detail=str(exc))
 
-    await ApiLogRepository(db).create(
-        api_name="MarkPaymentSent",
-        request_ref=request_ref,
-        response_code="200",
-        contract_no=response.contract_no,
-        api_direction="INBOUND",
-        source_system="API",
-        target_system="API",
-        response_payload=response.model_dump(mode="json"),
-    )
-    await db.commit()
-    return response
+#     await ApiLogRepository(db).create(
+#         api_name="MarkPaymentSent",
+#         request_ref=request_ref,
+#         response_code="200",
+#         contract_no=response.contract_no,
+#         api_direction="INBOUND",
+#         source_system="API",
+#         target_system="API",
+#         response_payload=response.model_dump(mode="json"),
+#     )
+#     await db.commit()
+#     return response
