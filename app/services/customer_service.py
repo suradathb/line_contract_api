@@ -53,7 +53,7 @@ class CustomerService:
                 customer_name=contract.customer_name,
                 contract_status=contract.contract_status,
                 eligible_to_map=False,
-                message=f"LINE user is already mapped to contract {existed_line.contract_no}.",
+                message="LINE account is already mapped.",
             )
 
         return CustomerVerifyResponse(
@@ -78,9 +78,7 @@ class CustomerService:
 
         existed_line = await self.contract_repo.get_by_line_user_id(payload.line_user_id)
         if existed_line and existed_line.contract_no != payload.contract_no:
-            raise ValueError(
-                f"This LINE user is already mapped to contract {existed_line.contract_no}."
-            )
+            raise ValueError("LINE account is already mapped.")
 
         contract = await self.contract_repo.map_line(
             contract_no=payload.contract_no,
@@ -119,4 +117,37 @@ class CustomerService:
             success=True,
             contract_no=contract.contract_no,
             message="Contract unmapped successfully.",
+        )
+    async def map_customer(self, payload: CustomerMapRequest) -> CustomerMapResponse:
+        contract = await self.contract_repo.get_by_contract_no(payload.contract_no)
+        if not contract:
+            raise ValueError("Contract not found.")
+
+        if contract.contract_status != "ACTIVE":
+            raise ValueError("Contract is not active.")
+
+        if contract.line_user_id:
+            raise ValueError("Contract is already mapped.")
+
+        existed_line = await self.contract_repo.get_by_line_user_id(payload.line_user_id)
+        if existed_line and existed_line.contract_no != payload.contract_no:
+            raise ValueError(
+                f"This LINE user is already mapped to contract {existed_line.contract_no}."
+            )
+
+        contract = await self.contract_repo.map_line(
+            contract_no=payload.contract_no,
+            line_user_id=payload.line_user_id,
+            line_display_name=None,
+        )
+
+        if not contract:
+            raise ValueError("Contract not found.")
+
+        return CustomerMapResponse(
+            success=True,
+            contract_no=contract.contract_no,
+            line_user_id=contract.line_user_id or "",
+            customer_name=contract.customer_name,
+            message="Contract mapped successfully.",
         )

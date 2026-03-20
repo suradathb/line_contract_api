@@ -309,3 +309,36 @@ class LineMessagingService:
             return
 
         await self.reply_text(reply_token, f"Unknown postback action: {action}")
+    
+    def verify_signature(self, raw_body: bytes, x_line_signature: str | None) -> bool:
+        if not x_line_signature:
+            return False
+
+        hash_value = hmac.new(
+            self.channel_secret.encode("utf-8"),
+            raw_body,
+            hashlib.sha256,
+        ).digest()
+        computed_signature = base64.b64encode(hash_value).decode("utf-8")
+        return hmac.compare_digest(computed_signature, x_line_signature)
+
+    async def reply_text_message(self, reply_token: str, text: str) -> dict:
+        url = "https://api.line.me/v2/bot/message/reply"
+        headers = {
+            "Authorization": f"Bearer {self.channel_access_token}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "replyToken": reply_token,
+            "messages": [
+                {
+                    "type": "text",
+                    "text": text,
+                }
+            ],
+        }
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+            return response.json() if response.content else {}

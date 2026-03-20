@@ -34,6 +34,6 @@ class CustomerMapResponse(BaseModel):
     success: bool
     contract_no: str
     line_user_id: str
-    line_display_name: str | None = None
+    customer_name: str | None = None
     message: str
 
